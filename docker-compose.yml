@@ -1,0 +1,50 @@
+version: "3"
+
+services:
+  nginx:
+    image: nginx:alpine
+    container_name: nz01
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./web:/web
+      - ./config/nginx:/etc/nginx/conf.d
+      - /static:/static
+      - /media:/media
+    depends_on: 
+      - web
+    
+  web:
+    build:
+      context: .
+    volumes:
+      - ./web:/web
+      - /static:/static
+      - /media:/media
+    expose: 
+      - "8000"
+    command: >
+      sh -c "python manage.py collectstatic --no-input &&
+              python manage.py migrate &&
+              gunicorn contacts.wsgi:application -b 0.0.0.0:8000"
+    environment:
+      - DB_HOST=db
+      - DB_NAME=app
+      - DB_USER=root
+      - DB_PASS=secretpassword
+    depends_on:
+      - db
+    
+
+
+  db:
+    image: mysql:5.7
+    environment:
+      - MYSQL_DATABASE=app
+      - MYSQL_USER=root
+      - MYSQL_PASSWORD=secretpassword
+      - MYSQL_ROOT_PASSWORD=secretpassword
+
+    
+    
+
